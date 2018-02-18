@@ -4,11 +4,27 @@ var favicon      = require('serve-favicon');
 var logger       = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser   = require('body-parser');
+const mongoose = require("mongoose");
+const expressLayouts = require("express-ejs-layouts");
+mongoose.connect("mongodb://localhost:27017/linkClone");
 
-var index = require('./routes/index');
+const session = require("express-session");
+const MongoStore = require("connect-mongo")(session);
+
+var home = require('./routes/home');
 var users = require('./routes/users');
 
 var app = express();
+
+app.use(session({
+  secret:"zila",
+  cookie:{maxAge:60000},
+  store:new MongoStore({
+    mongooseConnection:mongoose.connection,
+    ttl:24*60*60
+  })
+}));
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -22,7 +38,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', index);
+app.use(expressLayouts);
+app.set("layout", "layouts/main-layouts");
+
+app.use('/', home);
 app.use('/users', users);
 
 // catch 404 and forward to error handler
